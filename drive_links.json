@@ -1,0 +1,6 @@
+{
+  "_note": "Mappa codice foto → ID file Google Drive. Aggiungere le voci man mano che si caricano i file su Drive.",
+  "_formato": "{ \"CODICE_FOTO\": \"GOOGLE_DRIVE_FILE_ID\" }",
+  "_anteprima": "https://drive.google.com/file/d/{FILE_ID}/preview",
+  "_link": "https://drive.google.com/file/d/{FILE_ID}/view"
+}
