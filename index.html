@@ -209,16 +209,6 @@
       color: var(--blue-dark);
       letter-spacing: .03em;
     }
-    .badge {
-      font-size: .7rem;
-      font-weight: 600;
-      padding: .2rem .5rem;
-      border-radius: 9999px;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-    .badge-active { background: #d1fae5; color: var(--green); }
-    .badge-ceased { background: #fee2e2; color: var(--red); }
 
     .card-body { padding: .85rem 1rem; }
     .card-field {
@@ -378,34 +368,12 @@
       <div class="search-input-wrap">
         <span class="icon">🔍</span>
         <input type="text" id="searchInput"
-               placeholder="Cerca per codice PdR, utente o indirizzo…"
-               autocomplete="off" />
+                 placeholder="Cerca per codice PdR, via, fabbricato o presa…"
+                 autocomplete="off" />
+        </div>
+        <button class="btn-clear" onclick="clearSearch()">✕ Cancella</button>
       </div>
-      <button class="btn-clear" onclick="clearSearch()">✕ Cancella</button>
-    </div>
-    <div class="filter-row">
-      <div class="filter-group">
-        <label for="filterLocalita">Località</label>
-        <select id="filterLocalita"><option value="">Tutte le località</option></select>
-      </div>
-      <div class="filter-group">
-        <label for="filterClasse">Classe</label>
-        <select id="filterClasse"><option value="">Tutte le classi</option></select>
-      </div>
-      <div class="filter-group">
-        <label for="filterCessazione">Stato</label>
-        <select id="filterCessazione">
-          <option value="">Tutti</option>
-          <option value="attivi">Solo attivi</option>
-          <option value="cessati">Solo cessati</option>
-        </select>
-      </div>
-      <div class="filter-group">
-        <label for="filterFoto">Foto</label>
-        <select id="filterFoto">
-          <option value="">Tutte</option>
-          <option value="con_link">Con link Drive</option>
-          <option value="senza_link">Senza link Drive</option>
+      <div class="filter-row">
         </select>
       </div>
     </div>
@@ -470,45 +438,23 @@
 
   // ─── POPOLAMENTO FILTRI ──────────────────────────────────────────────────────
   function populateFilters() {
-    const localities = [...new Set(allData.map(r => r.localita).filter(Boolean))].sort();
-    const sel = document.getElementById('filterLocalita');
-    localities.forEach(l => {
-      const o = document.createElement('option');
-      o.value = l;
-      o.textContent = l.replace(/^\[.+?\]\s*-\s*/, ''); // rimuovi "[N] - "
-      sel.appendChild(o);
-    });
-
-    const classes = [...new Set(allData.map(r => r.classe).filter(Boolean))].sort();
-    const selC = document.getElementById('filterClasse');
-    classes.forEach(c => {
-      const o = document.createElement('option');
-      o.value = c; o.textContent = c;
-      selC.appendChild(o);
-    });
+    // Nessun filtro dinamico in questa versione
   }
 
   // ─── RICERCA ─────────────────────────────────────────────────────────────────
   function doSearch() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
-    const localita = document.getElementById('filterLocalita').value;
-    const classe = document.getElementById('filterClasse').value;
-    const cessazione = document.getElementById('filterCessazione').value;
     const fotoFilter = document.getElementById('filterFoto').value;
 
     filtered = allData.filter(r => {
       if (q) {
         const match =
           r.pdr.toLowerCase().includes(q) ||
-          r.utente.toLowerCase().includes(q) ||
           r.via.toLowerCase().includes(q) ||
-          r.matricola.toLowerCase().includes(q);
+          r.fab.toLowerCase().includes(q) ||
+          r.presa.toLowerCase().includes(q);
         if (!match) return false;
       }
-      if (localita && r.localita !== localita) return false;
-      if (classe && r.classe !== classe) return false;
-      if (cessazione === 'attivi' && r.cessazione !== '0') return false;
-      if (cessazione === 'cessati' && r.cessazione === '0') return false;
       if (fotoFilter === 'con_link') {
         if (!driveLinks[r.fotoPan] && !driveLinks[r.fotoPart]) return false;
       }
@@ -533,9 +479,10 @@
 
     // Status
     const q = document.getElementById('searchInput').value.trim();
+    const q2 = document.getElementById('searchInput').value.trim();
     document.getElementById('statusText').innerHTML =
       total === 0 ? 'Nessun risultato trovato' :
-      `<strong>${total.toLocaleString('it-IT')}</strong> PdR trovati${q ? ` per "<em>${q}</em>"` : ''}`;
+      `<strong>${total.toLocaleString('it-IT')}</strong> PdR trovati${q2 ? ` per "<em>${q2}</em>"` : ''}`;
     document.getElementById('pageInfo').textContent =
       total > 0 ? `Pagina ${currentPage} di ${totalPages}` : '';
 
@@ -557,39 +504,25 @@
   }
 
   function buildCard(r) {
-    const ceased = r.cessazione !== '0';
-    const badge = ceased
-      ? '<span class="badge badge-ceased">Cessato</span>'
-      : '<span class="badge badge-active">Attivo</span>';
-
-    const localitaClean = r.localita.replace(/^\[.+?\]\s*-\s*/, '');
+    const viaClean = r.via.replace(/^\[.+?\]\s*-\s*/, '').trim();
 
     return `
       <div class="card">
         <div class="card-header">
           <span class="pdr-code">${r.pdr}</span>
-          ${badge}
         </div>
         <div class="card-body">
           <div class="card-field">
-            <span class="lbl">Utente</span>
-            <span class="val">${r.utente || '—'}</span>
+            <span class="lbl">Via</span>
+            <span class="val">${viaClean || '—'}</span>
           </div>
           <div class="card-field">
-            <span class="lbl">Indirizzo</span>
-            <span class="val">${r.via || '—'}</span>
+            <span class="lbl">Fabbricato</span>
+            <span class="val">${r.fab || '—'}</span>
           </div>
           <div class="card-field">
-            <span class="lbl">Località</span>
-            <span class="val">${localitaClean || '—'}</span>
-          </div>
-          <div class="card-field">
-            <span class="lbl">Matricola</span>
-            <span class="val">${r.matricola || '—'}</span>
-          </div>
-          <div class="card-field">
-            <span class="lbl">Contatore</span>
-            <span class="val">${r.marca} ${r.modello} — Classe ${r.classe}</span>
+            <span class="lbl">Presa</span>
+            <span class="val">${r.presa || '—'}</span>
           </div>
         </div>
         <div class="foto-section">
@@ -683,9 +616,6 @@
 
   function clearSearch() {
     document.getElementById('searchInput').value = '';
-    document.getElementById('filterLocalita').value = '';
-    document.getElementById('filterClasse').value = '';
-    document.getElementById('filterCessazione').value = '';
     document.getElementById('filterFoto').value = '';
     doSearch();
   }
@@ -696,9 +626,7 @@
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(doSearch, 250);
   });
-  ['filterLocalita','filterClasse','filterCessazione','filterFoto'].forEach(id => {
-    document.getElementById(id).addEventListener('change', doSearch);
-  });
+  document.getElementById('filterFoto').addEventListener('change', doSearch);
 
   // ─── AVVIO ───────────────────────────────────────────────────────────────────
   loadData();
