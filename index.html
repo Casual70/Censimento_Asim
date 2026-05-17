@@ -462,10 +462,14 @@
         if (!match) return false;
       }
       if (fotoFilter === 'con_link') {
-        if (!driveLinks[r.fotoPan] && !driveLinks[r.fotoPart]) return false;
+        const hasScheda = !!(r.fab && driveLinks['Scheda fabbricato-' + r.fab]);
+        const hasFoto = !!(driveLinks[fotoKey(r.fotoPan)] || driveLinks[fotoKey(r.fotoPart)]);
+        if (!hasScheda && !hasFoto) return false;
       }
       if (fotoFilter === 'senza_link') {
-        if (driveLinks[r.fotoPan] || driveLinks[r.fotoPart]) return false;
+        const hasScheda = !!(r.fab && driveLinks['Scheda fabbricato-' + r.fab]);
+        const hasFoto = !!(driveLinks[fotoKey(r.fotoPan)] || driveLinks[fotoKey(r.fotoPart)]);
+        if (hasScheda || hasFoto) return false;
       }
       return true;
     });
@@ -509,8 +513,18 @@
     renderPagination(total, totalPages);
   }
 
+  // Normalizza codice foto → chiave Drive (aggiunge prefisso 100_)
+  function fotoKey(code) {
+    if (!code || code === '0') return null;
+    // Rimuove eventuale prefisso "100 - " o "100_" già presente, poi aggiunge "100_"
+    const normalized = code.replace(/^100\s*[-_]\s*/i, '').trim();
+    return '100_' + normalized;
+  }
+
   function buildCard(r) {
     const viaClean = r.via.replace(/^\[.+?\]\s*-\s*/, '').trim();
+    const schedaKey = r.fab ? 'Scheda fabbricato-' + r.fab : null;
+    const schedaId = schedaKey ? driveLinks[schedaKey] : null;
 
     return `
       <div class="card">
@@ -532,13 +546,35 @@
           </div>
         </div>
         <div class="foto-section">
-          <div class="foto-title">📷 Documentazione fotografica</div>
+          <div class="foto-title">📄 Scheda fabbricato</div>
+          <div style="margin-bottom:.75rem">${buildScheda(schedaId, r.fab)}</div>
+          <div class="foto-title">📷 Foto</div>
           <div class="foto-grid">
             ${buildFoto(r.fotoPan, 'Panoramica')}
             ${buildFoto(r.fotoPart, 'Particolare')}
           </div>
         </div>
       </div>`;
+  }
+
+  function buildScheda(driveId, fabNum) {
+    if (driveId) {
+      return `<a class="foto-link" href="https://drive.google.com/file/d/${driveId}/view" target="_blank" rel="noopener noreferrer">
+        <svg class="drive-icon" viewBox="0 0 87.3 78" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L28.25 48H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/>
+          <path d="M43.65 24L29.1 0c-1.35.8-2.5 1.9-3.3 3.3L1.2 43.5c-.8 1.35-1.2 2.9-1.2 4.5h28.25z" fill="#00AC47"/>
+          <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3L80.1 68l4.55-7.65c.8-1.4 1.2-2.95 1.2-4.5H57.6l5.9 11.5z" fill="#EA4335"/>
+          <path d="M43.65 24L58.2 0H29.1z" fill="#00832D"/>
+          <path d="M57.6 48L43.65 24 29.1 48z" fill="#2684FC"/>
+          <path d="M87.3 55.65c0-1.55-.4-3.1-1.2-4.5L62.5 11.8c-.8-1.4-1.95-2.5-3.3-3.3l-15.55 27 14.95 26z" fill="#FFBA00"/>
+        </svg>
+        Apri Scheda fabbricato-${fabNum}
+      </a>`;
+    }
+    if (fabNum && fabNum !== '0') {
+      return `<div class="foto-placeholder">Scheda fabbricato-${fabNum} non in Drive</div>`;
+    }
+    return `<div class="foto-placeholder">—</div>`;
   }
 
   function buildFoto(code, label) {
@@ -549,10 +585,10 @@
       </div>`;
     }
 
-    const driveId = driveLinks[code];
+    const key = fotoKey(code);
+    const driveId = key ? driveLinks[key] : null;
 
     if (driveId) {
-      // Mostra anteprima iframe + link
       return `<div class="foto-item">
         <div class="foto-label">${label} <span class="foto-code">${code}</span></div>
         <iframe class="foto-preview"
@@ -573,12 +609,9 @@
       </div>`;
     }
 
-    // Link non ancora mappato → placeholder con codice foto
     return `<div class="foto-item">
       <div class="foto-label">${label} <span class="foto-code">${code}</span></div>
-      <div class="foto-placeholder" title="Link Drive non ancora mappato">
-        🗂 Non mappato
-      </div>
+      <div class="foto-placeholder" title="Non ancora in Drive">🗂 Non disponibile</div>
     </div>`;
   }
 
