@@ -523,8 +523,15 @@
 
   function buildCard(r) {
     const viaClean = r.via.replace(/^\[.+?\]\s*-\s*/, '').trim();
-    const schedaKey = r.fab ? 'Scheda fabbricato-' + r.fab : null;
-    const schedaId = schedaKey ? driveLinks[schedaKey] : null;
+    const schedaKey = r.fab
+      ? (r.zona ? r.zona + '/Scheda fabbricato-' + r.fab : null) || ('Scheda fabbricato-' + r.fab)
+      : null;
+    // Prova prima la chiave con zona (es. "SelciLama/Scheda fabbricato-140"),
+    // poi fallback alla chiave semplice (vecchio drive_links.json)
+    const schedaId = schedaKey
+      ? (r.zona && driveLinks[r.zona + '/Scheda fabbricato-' + r.fab])
+          || driveLinks['Scheda fabbricato-' + r.fab]
+      : null;
 
     return `
       <div class="card">
@@ -559,7 +566,8 @@
 
   function buildScheda(driveId, fabNum) {
     if (driveId) {
-      return `<a class="foto-link" href="https://drive.google.com/file/d/${driveId}/view" target="_blank" rel="noopener noreferrer">
+      const url = `https://drive.google.com/file/d/${driveId}/view`;
+      return `<a class="foto-link" href="${url}" target="_blank" rel="noopener noreferrer">
         <svg class="drive-icon" viewBox="0 0 87.3 78" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L28.25 48H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/>
           <path d="M43.65 24L29.1 0c-1.35.8-2.5 1.9-3.3 3.3L1.2 43.5c-.8 1.35-1.2 2.9-1.2 4.5h28.25z" fill="#00AC47"/>
@@ -569,7 +577,8 @@
           <path d="M87.3 55.65c0-1.55-.4-3.1-1.2-4.5L62.5 11.8c-.8-1.4-1.95-2.5-3.3-3.3l-15.55 27 14.95 26z" fill="#FFBA00"/>
         </svg>
         Apri Scheda fabbricato-${fabNum}
-      </a>`;
+      </a>
+      <div style="font-size:.68rem;color:#888;margin-top:.25rem;word-break:break-all;font-family:monospace">${url}</div>`;
     }
     if (fabNum && fabNum !== '0') {
       return `<div class="foto-placeholder">Scheda fabbricato-${fabNum} non in Drive</div>`;
@@ -589,13 +598,14 @@
     const driveId = key ? driveLinks[key] : null;
 
     if (driveId) {
+      const url = `https://drive.google.com/file/d/${driveId}/view`;
       return `<div class="foto-item">
         <div class="foto-label">${label} <span class="foto-code">${code}</span></div>
         <iframe class="foto-preview"
           src="https://drive.google.com/file/d/${driveId}/preview"
           allow="autoplay"
           loading="lazy"></iframe>
-        <a class="foto-link" href="https://drive.google.com/file/d/${driveId}/view" target="_blank" rel="noopener noreferrer" style="margin-top:.35rem">
+        <a class="foto-link" href="${url}" target="_blank" rel="noopener noreferrer" style="margin-top:.35rem">
           <svg class="drive-icon" viewBox="0 0 87.3 78" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L28.25 48H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/>
             <path d="M43.65 24L29.1 0c-1.35.8-2.5 1.9-3.3 3.3L1.2 43.5c-.8 1.35-1.2 2.9-1.2 4.5h28.25z" fill="#00AC47"/>
@@ -606,6 +616,7 @@
           </svg>
           Apri in Drive
         </a>
+        <div style="font-size:.68rem;color:#888;margin-top:.2rem;word-break:break-all;font-family:monospace">${url}</div>
       </div>`;
     }
 

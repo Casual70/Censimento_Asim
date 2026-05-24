@@ -1,22 +1,31 @@
-import xlrd, json, os
+import xlrd, json, os, re
 
 wb = xlrd.open_workbook('DatiPdRBP e MP uniti.xls')
 sh = wb.sheets()[0]
 
-# Colonne (0-based): L=11, M=12, N=13, V=21, W=22, Z=25
+# Colonne (0-based): K=10, L=11, M=12, N=13, V=21, W=22, Z=25
 def val(r, c):
     v = sh.cell_value(r, c)
     if isinstance(v, float) and v == int(v):
         v = int(v)
     return str(v).strip()
 
+def normalizza_zona(raw):
+    """Estrae il nome zona da valori come '[5] - SelciLama' → 'SelciLama'"""
+    cleaned = re.sub(r'^\[\d+\]\s*-\s*', '', raw).strip()
+    # Rimuove anche eventuale prefisso numerico tipo "5_" o "5 "
+    cleaned = re.sub(r'^\d+[_\s]+', '', cleaned).strip()
+    return cleaned
+
 records = []
 for r in range(1, sh.nrows):
     pdr = val(r, 25)
     if not pdr or pdr in ('0', ''):
         continue
+    zona_raw = val(r, 10)  # Colonna K
     records.append({
         'pdr':      pdr,
+        'zona':     normalizza_zona(zona_raw),
         'via':      val(r, 11),
         'fab':      val(r, 12),
         'presa':    val(r, 13),
